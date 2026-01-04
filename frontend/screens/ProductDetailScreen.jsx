@@ -31,7 +31,9 @@ export default function ProductDetailScreen({ route, navigation }) {
 
   // State for main functionality
   const [quantity, setQuantity] = useState('1');
-  const [salePrice, setSalePrice] = useState(product.price.toString());
+ 
+const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00');
+
   const [customerName, setCustomerName] = useState('');
   const [supplierName, setSupplierName] = useState('');
   const [notes, setNotes] = useState('');
@@ -48,9 +50,7 @@ export default function ProductDetailScreen({ route, navigation }) {
   const transactionTypes = [
     { id: 'cash_sale', label: 'Cash Sale', icon: 'cash-outline' },
     { id: 'credit_sale', label: 'Credit Sale', icon: 'document-text-outline' },
-    { id: 'credit_buy', label: 'Credit Purchase', icon: 'cart-outline' },
-    { id: 'stock_adjust', label: 'Adjust Stock', icon: 'trending-up-outline' },
-    { id: 'return', label: 'Return', icon: 'arrow-back-outline' }
+    
   ];
 
   const [selectedTransaction, setSelectedTransaction] = useState('cash_sale');
@@ -165,7 +165,7 @@ export default function ProductDetailScreen({ route, navigation }) {
           onPress: () => {
             // Reset form
             setQuantity('1');
-            setSalePrice(product.price.toString());
+            setSalePrice(product?.price?.toString() || '0.00'); // <-- safe
             setCustomerName('');
             setSupplierName('');
             setNotes('');
@@ -334,12 +334,12 @@ export default function ProductDetailScreen({ route, navigation }) {
             onPress={() => {
               toggleSidebar();
               // Navigate to edit screen
-              navigation.navigate('EditProduct', { product });
+              navigation.navigate('EditProductScreen', { product });
             }}
           >
             <Ionicons name="create-outline" size={22} color="#666" />
             <Text style={styles.sidebarItemText}>Edit Product</Text>
-          </TouchableOpacity>
+          </TouchableOpacity   >
 
           <TouchableOpacity
             style={styles.sidebarItem}
@@ -508,7 +508,7 @@ export default function ProductDetailScreen({ route, navigation }) {
             style={[styles.actionButton, styles.cancelButton]}
             onPress={() => {
               setQuantity('1');
-              setSalePrice(product.price.toString());
+              setSalePrice(product?.price?.toString() || '0.00'); // <-- safe
               setCustomerName('');
               setSupplierName('');
               setNotes('');
