@@ -6,17 +6,23 @@ import pool from "../database.js";
  * @access  Public
  */
 export const createProduct = async (req, res) => {
+    console.log("Create Product route hit! Body:", req.body); // << add this
   const {
     user_id,
     name,
+    description,
+    brand,
     image_url,
     selling_price,
     current_stock,
-    low_stock_threshold
+    low_stock_threshold,
   } = req.body;
 
   if (!user_id || !name || selling_price === undefined) {
-    return res.status(400).json({ message: "Missing required fields" });
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields",
+    });
   }
 
   try {
@@ -24,32 +30,41 @@ export const createProduct = async (req, res) => {
       `INSERT INTO products (
         user_id,
         name,
+        description,
+        brand,
         image_url,
         selling_price,
         current_stock,
         low_stock_threshold
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *`,
       [
         user_id,
-        name,
+        name.trim(),
+        description || null,
+        brand || null,
         image_url || null,
-        selling_price,
-        current_stock ?? 0,
-        low_stock_threshold ?? 5
+        Number(selling_price),
+        Number(current_stock ?? 0),
+        Number(low_stock_threshold ?? 5),
       ]
     );
 
     res.status(201).json({
+      success: true,
       message: "Product created",
-      product: rows[0]
+      product: rows[0],
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
+
 
 /**
  * @desc    Get products for a user
