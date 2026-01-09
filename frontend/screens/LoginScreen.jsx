@@ -10,7 +10,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
@@ -49,6 +49,7 @@ const handleLogin = async () => {
 
   if (data.success) {
     console.log('Login successful', data);
+    await AsyncStorage.setItem('userId', data.user.id);
     navigation.replace('Home');
   } else {
     Alert.alert('Login Failed', data.message || 'Invalid credentials.');

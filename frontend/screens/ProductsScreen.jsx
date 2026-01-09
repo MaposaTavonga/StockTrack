@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,78 +13,11 @@ import {
   ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const BACKEND_URL = 'http://192.168.0.126:3000/api/products';
 export default function ProductsScreen({ navigation }) {
-  // Sample data with images (using placeholder images - replace with your actual image URLs)
-  const [products, setProducts] = useState([
-    { 
-      id: '1', 
-      name: 'Peanut Butter', 
-      brand: 'Jif',
-      category: 'Pantry',
-      stock: 25, 
-      price: 4.99,
-      unit: 'jar',
-      image: 'https://images.unsplash.com/photo-1623277800688-f0c8e87a2d6f?w=400&h=400&fit=crop',
-      description: 'Creamy peanut butter made from roasted peanuts.'
-    },
-    { 
-      id: '2', 
-      name: 'Organic Honey', 
-      brand: 'Nature\'s Way',
-      category: 'Pantry',
-      stock: 12, 
-      price: 8.99,
-      unit: 'bottle',
-      image: 'https://images.unsplash.com/photo-1587049352851-8d4e89133924?w-400&h=400&fit=crop',
-      description: 'Pure organic honey from wildflower nectar.'
-    },
-    { 
-      id: '3', 
-      name: 'Almond Milk', 
-      brand: 'Silk',
-      category: 'Dairy Alternatives',
-      stock: 8, 
-      price: 3.49,
-      unit: 'carton',
-      image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=400&fit=crop',
-      description: 'Unsweetened almond milk, great for cereals and smoothies.'
-    },
-    { 
-      id: '4', 
-      name: 'Whole Wheat Bread', 
-      brand: 'Nature\'s Own',
-      category: 'Bakery',
-      stock: 18, 
-      price: 2.99,
-      unit: 'loaf',
-      image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400&h=400&fit=crop',
-      description: '100% whole wheat bread, rich in fiber.'
-    },
-    { 
-      id: '5', 
-      name: 'Greek Yogurt', 
-      brand: 'Chobani',
-      category: 'Dairy',
-      stock: 6, 
-      price: 1.25,
-      unit: 'cup',
-      image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop',
-      description: 'Plain non-fat Greek yogurt, high in protein.'
-    },
-    { 
-      id: '6', 
-      name: 'Quinoa', 
-      brand: 'Ancient Harvest',
-      category: 'Grains',
-      stock: 32, 
-      price: 5.99,
-      unit: 'bag',
-      image: 'https://images.unsplash.com/photo-1598965675045-45c2d7cce8b7?w=400&h=400&fit=crop',
-      description: 'Organic quinoa, perfect for salads and bowls.'
-    },
-  ]);
-
+ 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -92,34 +25,79 @@ export default function ProductsScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [gridView, setGridView] = useState(false);
   const [sortBy, setSortBy] = useState('name');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+
+    // 🔐 FETCH PRODUCTS
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) {
+        Alert.alert('Session expired', 'Please login again');
+        navigation.replace('Login');
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/user/${userId}`);
+      const data = await response.json();
+
+      const mapped = data.products.map(p => ({
+        id: p.id,
+        name: p.name,
+        brand: p.brand || '—',
+        category: p.category || 'Uncategorized',
+        stock: p.current_stock,
+        price: Number(p.selling_price),
+        unit: p.unit || '',
+        image: p.image_url || 'https://images.unsplash.com/photo-1590080873600-98a68a775f97?auto=format&fit=crop&w=400&q=80&dl=1',
+        description: p.description || '',
+      }));
+
+      setProducts(mapped);
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchProducts();
+    setRefreshing(false);
+  };
 
   // Extract unique categories for filter
   const categories = ['All', ...new Set(products.map(p => p.category))];
 
   // Filter and sort products
-  const filteredProducts = products
-    .filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.brand.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+ const filteredProducts = products
+    .filter(p => {
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.brand.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory =
+        selectedCategory === 'All' || p.category === selectedCategory;
+
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
-      switch (sortBy) {
-        case 'name': return a.name.localeCompare(b.name);
-        case 'stock': return b.stock - a.stock;
-        case 'price': return a.price - b.price;
-        default: return 0;
-      }
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'stock') return b.stock - a.stock;
+      if (sortBy === 'price') return a.price - b.price;
+      return 0;
     });
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
+ 
 
   const handleProductPress = (product) => {
     // You can choose to show modal or navigate
@@ -144,7 +122,7 @@ export default function ProductsScreen({ navigation }) {
         <Text style={styles.gridName} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.gridBrand}>{item.brand}</Text>
         <View style={styles.priceRow}>
-          <Text style={styles.gridPrice}>${item.price.toFixed(2)}</Text>
+          <Text style={styles.gridPrice}>R{item.price.toFixed(2)}</Text>
           <Text style={styles.gridUnit}>/{item.unit}</Text>
         </View>
       </View>
@@ -170,7 +148,7 @@ export default function ProductsScreen({ navigation }) {
         <Text style={styles.listBrand}>{item.brand}</Text>
         <Text style={styles.listCategory}>{item.category}</Text>
         <View style={styles.listFooter}>
-          <Text style={styles.listPrice}>${item.price.toFixed(2)}/{item.unit}</Text>
+          <Text style={styles.listPrice}>R{item.price.toFixed(2)}</Text>
           <TouchableOpacity style={styles.actionButton}>
             <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
           </TouchableOpacity>
@@ -227,7 +205,7 @@ export default function ProductsScreen({ navigation }) {
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Price:</Text>
                     <Text style={styles.priceValue}>
-                      ${selectedProduct.price.toFixed(2)}/{selectedProduct.unit}
+                      R{selectedProduct.price.toFixed(2)}
                     </Text>
                   </View>
                   
@@ -298,12 +276,17 @@ export default function ProductsScreen({ navigation }) {
                 color="#2a9d8f"
               />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => navigation.navigate('AddProduct')}
-            >
-              <Ionicons name="add" size={24} color="#fff" />
-            </TouchableOpacity>
+           <TouchableOpacity
+  style={styles.fab}
+  onPress={() =>
+    navigation.navigate('AddProduct', {
+      products,
+      setProducts,
+    })
+  }
+>
+  <Ionicons name="add" size={28} color="#fff" />
+</TouchableOpacity>
           </View>
         </View>
         

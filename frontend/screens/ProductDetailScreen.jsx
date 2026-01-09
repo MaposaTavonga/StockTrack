@@ -120,7 +120,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
     switch(selectedTransaction) {
       case 'cash_sale':
         title = 'Cash Sale Recorded';
-        message = `Sold ${qty} ${product.unit}(s) of ${product.name} for $${total.toFixed(2)}`;
+        message = `Sold ${qty} ${product.unit}(s) of ${product.name} for R${total.toFixed(2)}`;
         break;
       
       case 'credit_sale':
@@ -129,7 +129,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
           return;
         }
         title = 'Credit Sale Recorded';
-        message = `Credit sale of ${qty} ${product.unit}(s) to ${customerName} for $${total.toFixed(2)}`;
+        message = `Credit sale of ${qty} ${product.unit}(s) to ${customerName} for R${total.toFixed(2)}`;
         break;
       
       case 'credit_buy':
@@ -138,7 +138,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
           return;
         }
         title = 'Credit Purchase Recorded';
-        message = `Purchased ${qty} ${product.unit}(s) from ${supplierName} on credit for $${total.toFixed(2)}`;
+        message = `Purchased ${qty} ${product.unit}(s) from ${supplierName} on credit for R${total.toFixed(2)}`;
         break;
       
       case 'stock_adjust':
@@ -246,7 +246,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Price per unit</Text>
             <View style={styles.priceInputContainer}>
-              <Text style={styles.currencySymbol}>$</Text>
+              <Text style={styles.currencySymbol}>R</Text>
               <TextInput
                 style={[styles.input, styles.priceInput]}
                 keyboardType="decimal-pad"
@@ -260,7 +260,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
 
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel}>Total Amount:</Text>
-          <Text style={styles.totalAmount}>${calculateTotal()}</Text>
+          <Text style={styles.totalAmount}>R{calculateTotal()}</Text>
         </View>
 
         {(selectedTransaction === 'credit_sale' || selectedTransaction === 'return') && (
@@ -440,7 +440,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
         <View style={styles.headerTitleContainer}>
           <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
           <Text style={styles.productDetails}>
-            Stock: {product.stock} • ${product.price}/{product.unit}
+            Stock: {product.stock} • R{product.price}/{product.unit}
           </Text>
         </View>
 
@@ -459,7 +459,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Price</Text>
-              <Text style={styles.infoValue}>${product.price}/{product.unit}</Text>
+              <Text style={styles.infoValue}>R{product.price}/{product.unit}</Text>
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Category</Text>
@@ -570,7 +570,7 @@ const [salePrice, setSalePrice] = useState(product?.price?.toString() || '0.00')
                 </View>
                 <View style={styles.historyItemRight}>
                   <Text style={styles.historyQuantity}>{item.quantity} {product.unit}</Text>
-                  <Text style={styles.historyTotal}>${item.total?.toFixed(2) || '0.00'}</Text>
+                  <Text style={styles.historyTotal}>R{item.total?.toFixed(2) || '0.00'}</Text>
                 </View>
               </View>
             ))
